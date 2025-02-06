@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 'project/**'  # Add this to catch all project branches
   pull_request:
     branches:
       - '*'
@@ -14,16 +15,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'  # Add this to fetch submodules
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Install the dependencies
         run: |
           python -m pip install -r requirements.txt
+
       - name: Build the JupyterLite site
         run: |
           jupyter lite build --contents notebooks --output-dir dist
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -31,15 +38,13 @@ jobs:
 
   deploy:
     needs: build
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/project/')  # Update condition
     permissions:
       pages: write
       id-token: write
-
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to GitHub Pages
