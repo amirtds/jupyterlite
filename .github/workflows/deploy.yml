@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - 'project/**'  # Add this to catch all project branches
+      - 'project/**'
   pull_request:
     branches:
       - '*'
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive'  # Add this to fetch submodules
+          submodules: 'recursive'
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -27,7 +27,26 @@ jobs:
         run: |
           python -m pip install -r requirements.txt
 
+      - name: Get branch name
+        id: branch-name
+        run: |
+          if [[ $GITHUB_REF == refs/heads/project/* ]]; then
+            echo "BRANCH_PATH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          else
+            echo "BRANCH_PATH=main" >> $GITHUB_ENV
+          fi
+
       - name: Build the JupyterLite site
+        run: |
+          # Create branch-specific directory
+          mkdir -p dist/${{ env.BRANCH_PATH }}
+          
+          # Build JupyterLite for this branch
+          jupyter lite build --contents notebooks --output-dir dist/${{ env.BRANCH_PATH }}
+
+      # If this is the main branch, also build the root
+      - name: Build root site
+        if: github.ref == 'refs/heads/main'
         run: |
           jupyter lite build --contents notebooks --output-dir dist
 
@@ -38,7 +57,7 @@ jobs:
 
   deploy:
     needs: build
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/project/')  # Update condition
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/project/')
     permissions:
       pages: write
       id-token: write
