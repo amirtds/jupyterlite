@@ -16,7 +16,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
+          submodules: 'recursive'  # This alone might not be enough
+          fetch-depth: 0  # Get all history for proper submodule checkout
+
+      - name: Initialize and update submodules
+        run: |
+          git submodule init
+          git submodule update --recursive --remote
+          git submodule status
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -41,8 +48,12 @@ jobs:
           # Create branch-specific directory
           mkdir -p dist/${{ env.BRANCH_PATH }}
           
+          # List contents to debug
+          echo "Contents of notebooks directory:"
+          ls -la notebooks/
+          
           # Build JupyterLite for this branch
-          jupyter lite build --contents notebooks --output-dir dist/${{ env.BRANCH_PATH }}
+          jupyter lite build --contents notebooks/${{ github.event.repository.name }} --output-dir dist/${{ env.BRANCH_PATH }}
 
       # If this is the main branch, also build the root
       - name: Build root site
