@@ -16,8 +16,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive'  # This alone might not be enough
-          fetch-depth: 0  # Get all history for proper submodule checkout
+          submodules: 'recursive'
+          fetch-depth: 0
 
       - name: Initialize and update submodules
         run: |
@@ -34,28 +34,34 @@ jobs:
         run: |
           python -m pip install -r requirements.txt
 
-      - name: Get branch name
+      - name: Get branch name and setup build
         id: branch-name
         run: |
           if [[ $GITHUB_REF == refs/heads/project/* ]]; then
+            # For project branches, use the specific project's notebooks
             echo "BRANCH_PATH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+            echo "CONTENT_PATH=notebooks/${GITHUB_REF#refs/heads/project/}" >> $GITHUB_ENV
           else
+            # For main branch, use the base notebooks
             echo "BRANCH_PATH=main" >> $GITHUB_ENV
+            echo "CONTENT_PATH=notebooks" >> $GITHUB_ENV
           fi
-
-      - name: Build the JupyterLite site
-        run: |
+          
           # Create branch-specific directory
           mkdir -p dist/${{ env.BRANCH_PATH }}
-          
-          # List contents to debug
+
+      - name: Build JupyterLite site
+        run: |
+          # Debug information
+          echo "Building for branch: ${{ env.BRANCH_PATH }}"
+          echo "Using content from: ${{ env.CONTENT_PATH }}"
           echo "Contents of notebooks directory:"
           ls -la notebooks/
           
           # Build JupyterLite for this branch
-          jupyter lite build --contents notebooks/${{ github.event.repository.name }} --output-dir dist/${{ env.BRANCH_PATH }}
+          jupyter lite build --contents ${{ env.CONTENT_PATH }} --output-dir dist/${{ env.BRANCH_PATH }}
 
-      # If this is the main branch, also build the root
+      # If this is the main branch, also build the root site
       - name: Build root site
         if: github.ref == 'refs/heads/main'
         run: |
