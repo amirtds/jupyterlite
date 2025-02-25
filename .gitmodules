@@ -1,0 +1,3 @@
+[submodule "notebooks/python-demo"]
+    path = notebooks/python-demo
+    url = https://github.com/amirtds/jupyter-notebooks
