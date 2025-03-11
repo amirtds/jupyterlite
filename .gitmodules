@@ -1,0 +1,3 @@
+[submodule "notebooks/pythoncourse"]
+    path = notebooks/pythoncourse
+    url = https://github.com/amirtds/jupyter-notebooks
